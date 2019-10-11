@@ -2,7 +2,7 @@
 import time
 from random import randint
 
-from rpi_ws281x import Adafruit_NeoPixel, Color
+from rpi_ws281x import Adafruit_NeoPixel
 
 from blackbody import blackbody
 
