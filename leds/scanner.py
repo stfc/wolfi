@@ -1,5 +1,6 @@
 # Simple test for NeoPixels on Raspberry Pi
 import time
+from collections import namedtuple
 from random import randint
 
 from rpi_ws281x import Adafruit_NeoPixel
@@ -29,53 +30,62 @@ def setup():
         LED_BRIGHTNESS,
     )
 
+    ### CPU LOAD
+    cpu = namedtuple('CPU', [
+        'idle',
+        'last_idle',
+        'idle_delta',
+        'total',
+        'last_total',
+        'total_delta',
+        'load',
+    ])
+    cpu.last_idle = cpu.last_total = 0
+
+    #### NETWORK THROUGHPUT
+    net = namedtuple('NET', [
+        'bytes',
+        'last_bytes',
+        'time',
+        'last_time',
+        'load',
+    ])
+    net.last_bytes = 0
+    net.last_time = time.time()
+
     pixels.begin()
 
+    return (pixels, cpu, net)
+
 def main():
-    ### CPU LOAD
-    if LOAD_CPU:
-        last_idle = last_total = 0
-
-    #### NETWORK THROUGHPUT
-    if LOAD_NET:
-        last_net = 0
-        last_time = time.time()
-
-    #### NETWORK THROUGHPUT
-    last_net = 0
-    last_time = time.time()
+    pixels, cpu, net = setup()
 
     while True:
-        #### BEGIN - GET NETWORK THROUGHPUT
         if LOAD_NET:
-            this_net = 0
-            this_time = time.time()
+            net.bytes = 0
+            net.time = time.time()
             for s in ['rx', 'tx']:
                 f = open('/sys/class/net/eth0/statistics/%s_bytes' % s)
-                this_net += int(f.read())
-            bps = (this_net - last_net) / (this_time - last_time)
-            last_net = this_net
-            last_time = this_time
-            load_net = min(171, int(bps / 5000))
-        #### END - GET NETWORK THROUGHPUT
+                net.bytes += int(f.read())
+            net.load = min(171, int((net.bytes - net.last_bytes) / (net.time - net.last_time) / 5000))
+            net.last_bytes = net.bytes
+            net.last_time = net.time
 
         for _ in range(0, LED_COUNT):
             i = randint(0, LED_COUNT-1) # uncomment for random sparkles!
 
-            #### BEGIN - GET CPU LOAD
             if LOAD_CPU:
                 f_stat = open('/proc/stat')
                 fields = [float(column) for column in f_stat.readline().pixels().split()[1:]]
-                idle, total = fields[3], sum(fields)
-                idle_delta, total_delta = idle - last_idle, total - last_total
-                last_idle, last_total = idle, total
-                load_cpu = int(100 * (1.0 - idle_delta / total_delta))
-            #### END - GET CPU LOAD
+                cpu.idle, cpu.total = fields[3], sum(fields)
+                cpu.idle_delta, cpu.total_delta = cpu.idle - cpu.last_idle, cpu.total - cpu.last_total
+                cpu.last_idle, cpu.last_total = cpu.idle, cpu.total
+                cpu.load = int(100 * (1.0 - cpu.idle_delta / cpu.total_delta))
 
             # Take mean of active load measurements
             load = 0
-            load += load_cpu * LOAD_CPU
-            load += load_net * LOAD_NET
+            load += cpu.load * LOAD_CPU
+            load += net.load * LOAD_NET
             load /= LOAD_CPU + LOAD_NET
 
             # Update brightness
@@ -102,5 +112,4 @@ def main():
 
 
 if __name__ == '__main__':
-    setup()
     main()
