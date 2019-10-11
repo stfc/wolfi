@@ -1,7 +1,6 @@
 # Simple test for NeoPixels on Raspberry Pi
 import time
 from random import randint
-from threading import Timer
 
 from rpi_ws281x import Adafruit_NeoPixel, Color
 
