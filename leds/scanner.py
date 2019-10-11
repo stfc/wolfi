@@ -18,14 +18,11 @@ LED_INVERT = False
 
 def main():
     ### CPU LOAD
-    last_idle = last_total = 0
-    f_stat = open('/proc/stat')
+    #last_idle = last_total = 0
 
     #### NETWORK THROUGHPUT
-    # last_net = 0
-    # last_time = time.time()
-    # f_rx = open('/sys/class/net/eth0/statistics/rx_bytes')
-    # f_tx = open('/sys/class/net/eth0/statistics/tx_bytes')
+    last_net = 0
+    last_time = time.time()
 
     # Initialise NeoPixel object
     pixels = Adafruit_NeoPixel(
@@ -41,26 +38,27 @@ def main():
 
     while True:
         #### BEGIN - GET NETWORK THROUGHPUT
-        # this_net = 0
-        # this_time = time.time()
-        # for f in [f_rx, f_tx]:
-        #     f.seek(0)
-        #     this_net += int(f.read())
-        # bps = (this_net - last_net) / (this_time - last_time)
-        # last_net = this_net
-        # last_time = this_time
+        this_net = 0
+        this_time = time.time()
+        for s in ['rx', 'tx']:
+            f = open('/sys/class/net/eth0/statistics/%s_bytes' % s)
+            this_net += int(f.read())
+        bps = (this_net - last_net) / (this_time - last_time)
+        last_net = this_net
+        last_time = this_time
+        load = min(171, int(bps / 5000))
         #### END - GET NETWORK THROUGHPUT
 
         for _ in range(0, LED_COUNT):
             i = randint(0, LED_COUNT-1) # uncomment for random sparkles!
 
             #### BEGIN - GET CPU LOAD
-            f_stat.seek(0)
-            fields = [float(column) for column in f_stat.readline().pixels().split()[1:]]
-            idle, total = fields[3], sum(fields)
-            idle_delta, total_delta = idle - last_idle, total - last_total
-            last_idle, last_total = idle, total
-            load = int(100 * (1.0 - idle_delta / total_delta))
+            #f_stat = open('/proc/stat')
+            #fields = [float(column) for column in f_stat.readline().pixels().split()[1:]]
+            #idle, total = fields[3], sum(fields)
+            #idle_delta, total_delta = idle - last_idle, total - last_total
+            #last_idle, last_total = idle, total
+            #load = int(100 * (1.0 - idle_delta / total_delta))
             #### END - GET CPU LOAD
 
             # Update brightness
