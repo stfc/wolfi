@@ -16,9 +16,13 @@ LED_BRIGHTNESS = 127  # Set to 0 for darkest and 255 for brightest
 # True to invert the signal (when using NPN transistor level shift)
 LED_INVERT = False
 
+LOAD_NET = True
+LOAD_CPU = False
+
 def main():
     ### CPU LOAD
-    #last_idle = last_total = 0
+    if LOAD_CPU:
+        last_idle = last_total = 0
 
     #### NETWORK THROUGHPUT
     last_net = 0
@@ -46,20 +50,27 @@ def main():
         bps = (this_net - last_net) / (this_time - last_time)
         last_net = this_net
         last_time = this_time
-        load = min(171, int(bps / 5000))
+        load_net = min(171, int(bps / 5000))
         #### END - GET NETWORK THROUGHPUT
 
         for _ in range(0, LED_COUNT):
             i = randint(0, LED_COUNT-1) # uncomment for random sparkles!
 
             #### BEGIN - GET CPU LOAD
-            #f_stat = open('/proc/stat')
-            #fields = [float(column) for column in f_stat.readline().pixels().split()[1:]]
-            #idle, total = fields[3], sum(fields)
-            #idle_delta, total_delta = idle - last_idle, total - last_total
-            #last_idle, last_total = idle, total
-            #load = int(100 * (1.0 - idle_delta / total_delta))
+            if LOAD_CPU:
+                f_stat = open('/proc/stat')
+                fields = [float(column) for column in f_stat.readline().pixels().split()[1:]]
+                idle, total = fields[3], sum(fields)
+                idle_delta, total_delta = idle - last_idle, total - last_total
+                last_idle, last_total = idle, total
+                load_cpu = int(100 * (1.0 - idle_delta / total_delta))
             #### END - GET CPU LOAD
+
+            # Take mean of active load measurements
+            load = 0
+            load += load_cpu * LOAD_CPU
+            load += load_net * LOAD_NET
+            load /= LOAD_CPU + LOAD_NET
 
             # Update brightness
             #pixels.brightness = 0.05 + load/400
