@@ -3,13 +3,18 @@ import time
 from random import randint
 from threading import Timer
 
-import board
-import neopixel
+from rpi_ws281x import Adafruit_NeoPixel, Color
 
 from blackbody import blackbody
 
-PIN_PIXELS = board.D18
-NUM_PIXELS = 8
+# LED strip configuration:
+LED_COUNT = 12        # Number of LED pixels.
+LED_PIN = 18          # GPIO pin connected to the pixels (must support PWM!).
+LED_FREQ_HZ = 800000  # LED signal frequency in hertz (usually 800khz)
+LED_DMA = 10          # DMA channel to use for generating signal (try 10)
+LED_BRIGHTNESS = 127  # Set to 0 for darkest and 255 for brightest
+# True to invert the signal (when using NPN transistor level shift)
+LED_INVERT = False
 
 def main():
     ### CPU LOAD
@@ -23,13 +28,16 @@ def main():
     # f_tx = open('/sys/class/net/eth0/statistics/tx_bytes')
 
     # Initialise NeoPixel object
-    pixels = neopixel.NeoPixel(
-        PIN_PIXELS,
-        NUM_PIXELS,
-        brightness=0.1,
-        auto_write=False,
-        pixel_order=neopixel.GRB
+    pixels = Adafruit_NeoPixel(
+        LED_COUNT,
+        LED_PIN,
+        LED_FREQ_HZ,
+        LED_DMA,
+        LED_INVERT,
+        LED_BRIGHTNESS,
     )
+
+    pixels.begin()
 
     while True:
         #### BEGIN - GET NETWORK THROUGHPUT
@@ -43,12 +51,12 @@ def main():
         # last_time = this_time
         #### END - GET NETWORK THROUGHPUT
 
-        for _ in range(0, NUM_PIXELS):
-            i = randint(0, NUM_PIXELS-1) # uncomment for random sparkles!
+        for _ in range(0, LED_COUNT):
+            i = randint(0, LED_COUNT-1) # uncomment for random sparkles!
 
             #### BEGIN - GET CPU LOAD
             f_stat.seek(0)
-            fields = [float(column) for column in f_stat.readline().strip().split()[1:]]
+            fields = [float(column) for column in f_stat.readline().pixels().split()[1:]]
             idle, total = fields[3], sum(fields)
             idle_delta, total_delta = idle - last_idle, total - last_total
             last_idle, last_total = idle, total
@@ -59,16 +67,18 @@ def main():
             #pixels.brightness = 0.05 + load/400
 
             # Set current pixel
-            pixels[i] = blackbody[load]
+            pixels.setPixelColorRGB(i, *blackbody[load])
             pixels.show()
 
             # Fade all pixels for next round
-            for j in range(0, NUM_PIXELS):
-                scale = max(pixels[i]) / 5
-                pixels[j] = (
-                    int(max(0, pixels[j][0] - scale)),
-                    int(max(0, pixels[j][1] - scale)),
-                    int(max(0, pixels[j][2] - scale)),
+            for j in range(0, LED_COUNT):
+                c = pixels.getPixelColorRGB(j)
+                scale = max(c.r, c.g, c.b) / 5
+                pixels.setPixelColorRGB(
+                    j,
+                    int(max(0, c.r - scale)),
+                    int(max(0, c.g - scale)),
+                    int(max(0, c.b - scale)),
                 )
 
             # Delay until next frame
