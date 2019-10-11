@@ -24,8 +24,9 @@ def main():
         last_idle = last_total = 0
 
     #### NETWORK THROUGHPUT
-    last_net = 0
-    last_time = time.time()
+    if LOAD_NET:
+        last_net = 0
+        last_time = time.time()
 
     # Initialise NeoPixel object
     pixels = Adafruit_NeoPixel(
@@ -41,15 +42,16 @@ def main():
 
     while True:
         #### BEGIN - GET NETWORK THROUGHPUT
-        this_net = 0
-        this_time = time.time()
-        for s in ['rx', 'tx']:
-            f = open('/sys/class/net/eth0/statistics/%s_bytes' % s)
-            this_net += int(f.read())
-        bps = (this_net - last_net) / (this_time - last_time)
-        last_net = this_net
-        last_time = this_time
-        load_net = min(171, int(bps / 5000))
+        if LOAD_NET:
+            this_net = 0
+            this_time = time.time()
+            for s in ['rx', 'tx']:
+                f = open('/sys/class/net/eth0/statistics/%s_bytes' % s)
+                this_net += int(f.read())
+            bps = (this_net - last_net) / (this_time - last_time)
+            last_net = this_net
+            last_time = this_time
+            load_net = min(171, int(bps / 5000))
         #### END - GET NETWORK THROUGHPUT
 
         for _ in range(0, LED_COUNT):
