@@ -18,16 +18,7 @@ LED_INVERT = False
 LOAD_NET = True
 LOAD_CPU = False
 
-def main():
-    ### CPU LOAD
-    if LOAD_CPU:
-        last_idle = last_total = 0
-
-    #### NETWORK THROUGHPUT
-    if LOAD_NET:
-        last_net = 0
-        last_time = time.time()
-
+def setup():
     # Initialise NeoPixel object
     pixels = Adafruit_NeoPixel(
         LED_COUNT,
@@ -39,6 +30,20 @@ def main():
     )
 
     pixels.begin()
+
+def main():
+    ### CPU LOAD
+    if LOAD_CPU:
+        last_idle = last_total = 0
+
+    #### NETWORK THROUGHPUT
+    if LOAD_NET:
+        last_net = 0
+        last_time = time.time()
+
+    #### NETWORK THROUGHPUT
+    last_net = 0
+    last_time = time.time()
 
     while True:
         #### BEGIN - GET NETWORK THROUGHPUT
@@ -97,4 +102,5 @@ def main():
 
 
 if __name__ == '__main__':
+    setup()
     main()
