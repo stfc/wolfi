@@ -13,8 +13,7 @@ LED_PIN = 18          # GPIO pin connected to the pixels (must support PWM!).
 LED_FREQ_HZ = 800000  # LED signal frequency in hertz (usually 800khz)
 LED_DMA = 10          # DMA channel to use for generating signal (try 10)
 LED_BRIGHTNESS = 127  # Set to 0 for darkest and 255 for brightest
-# True to invert the signal (when using NPN transistor level shift)
-LED_INVERT = False
+LED_INVERT = False    # True to invert the signal (when using NPN transistor level shift)
 
 LOAD_NET = True
 LOAD_CPU = False
@@ -56,6 +55,7 @@ def setup():
     pixels.begin()
 
     return (pixels, cpu, net)
+
 
 def main():
     pixels, cpu, net = setup()
